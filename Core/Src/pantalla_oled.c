@@ -106,7 +106,7 @@ bool pantalla_oled_mostrar_rpm(float rpm)
     /* Redondeo a entero, evitando conversiones desbordadas. */
     if (rpm > 99999.0f) rpm = 99999.0f;
     if (rpm < -99999.0f) rpm = -99999.0f;
-    (void)snprintf(numero, sizeof(numero), "%.0f", (double)rpm);
+    (void)snprintf(numero, sizeof(numero), "%d", (int)lroundf(rpm));
     memset(buffer, 0, sizeof(buffer));
     texto(20, 2, "RPM");
     texto(20, 4, numero);
