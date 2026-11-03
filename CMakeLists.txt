@@ -46,12 +46,15 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     HAL/generador_pwm.c
+    HAL/lector_encoder.c
+    Application/calculo_rpm.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     HAL
+    Application
 )
 
 # Add project symbols (macros)
