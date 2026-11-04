@@ -48,6 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     HAL/generador_pwm.c
     HAL/lector_encoder.c
     Application/calculo_rpm.c
+    Application/control_velocidad.c
 )
 
 # Add include paths

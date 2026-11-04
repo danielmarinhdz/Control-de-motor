@@ -3,8 +3,8 @@
 #include "maquina_estados.h"
 #include "generador_pwm.h"
 #include "pantalla_oled.h"
-#include "lector_encoder.h"   /* Interfaz propuesta a Dani, por confirmar */
-#include "calculo_rpm.h"      /* Interfaz propuesta a Dani, por confirmar */
+#include "lector_encoder.h"
+#include "calculo_rpm.h"
 
 #define PERIODO_CONTROL_S  0.010f  /* TIM2: 10 ms */
 #define PERIODOS_PANTALLA  10u     /* 10 x 10 ms = refrescar cada ~100 ms */
