@@ -4,8 +4,10 @@
 #include <stdbool.h>
 #include "stm32f4xx_hal.h"
 
-/* OLED SSD1306 128x64, I2C 7-bit 0x3C (por confirmar).
- * hi2c: periferico configurado por Dani; llamar en main/while, NO ISR.
+/* OLED SSD1306 128x64: I2C1, PB8=SCL y PB9=SDA (confirmados).
+ * Alimentacion: VCC=3V3 y GND=GND. Direccion 7-bit 0x3C
+ * (verificar direccion real del modulo; algunas OLED usan 0x3D).
+ * hi2c: &hi2c1 configurado en CubeMX por Dani; llamar desde main, NO ISR.
  * Devuelve false si falla la comunicacion I2C.
  */
 bool pantalla_oled_inicializar(I2C_HandleTypeDef *hi2c);
