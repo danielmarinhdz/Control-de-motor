@@ -13,7 +13,7 @@
 
 #include <stdbool.h>
 
-#define CONTROL_VELOCIDAD_RPM_MAX  350.0f  /* Sin carga a 100 % (por confirmar) */
+#define CONTROL_VELOCIDAD_RPM_MAX  342.0f  /* Sin carga a 100 % con bateria de 11.1 V (con fuente de 12 V: ~369). Reescalado a 685 cuentas/vuelta */
 
 /* Inicia maquina_estados, generador_pwm y calculo_rpm; deja el motor parado
  * y pasa de INIT a IDLE.

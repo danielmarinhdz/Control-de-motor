@@ -5,6 +5,7 @@
 #include "pantalla_oled.h"
 #include "lector_encoder.h"
 #include "calculo_rpm.h"
+#include "experimento_pwm.h"
 
 #define PERIODO_CONTROL_S  0.010f  /* TIM2: 10 ms */
 #define PERIODOS_PANTALLA  10u     /* 10 x 10 ms = refrescar cada ~100 ms */
@@ -67,6 +68,10 @@ void control_velocidad_ejecutar(void)
     /* 2. Medir. dt real = periodos x 10 ms (normalmente 1). */
     float dt_s = (float)periodos * PERIODO_CONTROL_S;
     rpm_medida = calculo_rpm_actualizar(cuenta, dt_s);
+
+    /* Gancho del experimento: guarda la muestra y fija el PWM de este ciclo.
+     * Si el experimento esta apagado (o no corre), no hace nada. */
+    experimento_pwm_muestrear(cuenta, periodos);
 
     /* 3. Actuar: solo RUN mueve el motor; IDLE y FAULT lo mantienen apagado. */
     if (maquina_estados_permite_motor()) {

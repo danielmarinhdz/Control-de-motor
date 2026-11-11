@@ -49,6 +49,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     HAL/lector_encoder.c
     Application/calculo_rpm.c
     Application/control_velocidad.c
+    Core/Src/maquina_estados.c
+    Core/Src/pantalla_oled.c
+    Application/telemetria_serial.c
+    Application/experimento_pwm.c
 )
 
 # Add include paths
