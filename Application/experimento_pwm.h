@@ -7,7 +7,7 @@
  * motor (respuesta al escalon y PRBS9) para la actividad de modelado.
  *
  * COMO SE USA (con la placa ya flasheada):
- *   1a pulsacion del boton azul -> prueba del ESCALON (8 s).
+ *   1a pulsacion del boton azul -> prueba del ESCALON (5 s).
  *   2a pulsacion del boton azul -> prueba PRBS9 (32 s).
  *   (despues vuelve a alternar: escalon, PRBS9, escalon, ...)
  *   Espera a que termine de mandar los datos ("EXP,FIN") antes de volver a presionar.
@@ -18,7 +18,7 @@
  *     el puerto serie, asi el muestreo queda parejo.
  *   - Al terminar apaga el motor y manda todo por USART2 (115200):
  *
- *       EXP,INICIO,run=1,modo=1,quien=1,bajo=38,alto=74,ts_ms=10,n=800,ini=400,cpv=685,sgn=-1,bitm=0,perdidas=0
+ *       EXP,INICIO,run=1,modo=1,quien=1,bajo=38,alto=74,ts_ms=10,n=500,ini=100,cpv=685,sgn=-1,bitm=0,perdidas=0
  *       EXP,0,0,51234        <- EXP,<muestra k>,<PWM %>,<cuenta del encoder>
  *       ...
  *       EXP,FIN
@@ -43,7 +43,7 @@
  *   Mateo           37 %         78 %
  *   Angel           41 %         71 %
  *
- *   Escalon: 1 s en 0 %, 3 s en BAJO, 4 s en ALTO (el modelo usa el salto BAJO -> ALTO).
+ *   Escalon: 1 s en 0 % y luego un salto directo a ALTO durante 4 s.
  *   PRBS9  : 1.5 s en BAJO y luego 511 bits que saltan entre BAJO y ALTO.
  * ------------------------------------------------------------------------- */
 #define INTEGRANTE_DANIEL  1

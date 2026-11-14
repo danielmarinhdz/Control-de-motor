@@ -39,10 +39,9 @@ extern UART_HandleTypeDef huart2;
 
 /* Duraciones en ciclos de 10 ms. */
 #define ESC_CERO         100u   /* 1.0 s en 0 %                                   */
-#define ESC_BAJO         300u   /* 3.0 s en BAJO                                  */
 #define ESC_ALTO         400u   /* 4.0 s en ALTO                                  */
-#define ESC_TOTAL        (ESC_CERO + ESC_BAJO + ESC_ALTO)
-#define ESC_INICIO       (ESC_CERO + ESC_BAJO)            /* salto BAJO -> ALTO   */
+#define ESC_TOTAL        (ESC_CERO + ESC_ALTO)
+#define ESC_INICIO       ESC_CERO                         /* salto 0 -> ALTO      */
 
 #define PRBS_CALENTAR    150u   /* 1.5 s en BAJO antes de la secuencia            */
 #define PRBS_BITS        511u   /* PRBS9: 2^9 - 1                                 */
@@ -89,9 +88,8 @@ static void aplicar_pwm(uint8_t pct)
 static uint8_t perfil(uint32_t k)
 {
     if (modo == MODO_ESCALON) {
-        if (k < ESC_CERO)             return 0u;
-        if (k < ESC_CERO + ESC_BAJO)  return NIVEL_BAJO;
-        return NIVEL_ALTO;
+        if (k < ESC_CERO) return 0u;     /* 1 s apagado            */
+        return NIVEL_ALTO;               /* escalon: 0 % -> ALTO   */
     }
     /* MODO_PRBS9 */
     if (k < PRBS_CALENTAR) {
