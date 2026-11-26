@@ -5,6 +5,7 @@
 #include "pantalla_oled.h"
 #include "lector_encoder.h"
 #include "calculo_rpm.h"
+#include "calculo_pid.h"
 #include "experimento_pwm.h"
 
 #define PERIODO_CONTROL_S  0.010f  /* TIM2: 10 ms */
@@ -14,16 +15,20 @@
 static volatile uint16_t cuenta_isr = 0;
 static volatile uint32_t periodos_pendientes = 0;
 
+/* La pone arrancar()/detener(), que el boton llama desde su ISR. El PID se
+ * reinicia en el while(1) (control_velocidad_ejecutar), nunca dentro de la ISR. */
+static volatile bool reiniciar_pid = true;
+
 /* Solo se usan fuera de la ISR. */
 static float referencia_rpm = 0.0f;
 static float rpm_medida = 0.0f;
 static uint32_t periodos_desde_pantalla = 0;
 
-/* Lazo abierto: relacion lineal RPM -> %. Con el PID, aqui se llamara
- * a calculo_pid_actualizar(referencia_rpm, rpm_medida). */
+/* Lazo cerrado: el PI compara la referencia con la velocidad medida y
+ * devuelve el mando en % de PWM con signo, ya saturado a [-100, 100]. */
 static float calcular_mando(void)
 {
-    return referencia_rpm * 100.0f / CONTROL_VELOCIDAD_RPM_MAX;
+    return calculo_pid_actualizar(referencia_rpm, rpm_medida);
 }
 
 /* Unica ISR de timers del proyecto: solo toma la foto del encoder y avisa.
@@ -40,6 +45,9 @@ void control_velocidad_iniciar(void)
 {
     maquina_estados_inicializar();
     generador_pwm_iniciar();
+    (void)calculo_pid_configurar(CALCULO_PID_KP, CALCULO_PID_KI, CALCULO_PID_KD,
+                                 PERIODO_CONTROL_S);
+    calculo_pid_reiniciar();
 
     /* Sin interrupciones para que la cuenta inicial y el contador de
      * periodos queden alineados. */
@@ -59,7 +67,13 @@ void control_velocidad_ejecutar(void)
     uint32_t periodos = periodos_pendientes;
     uint16_t cuenta = cuenta_isr;
     periodos_pendientes = 0;
+    bool reiniciar = reiniciar_pid;   /* aviso del boton (arrancar/detener) */
+    reiniciar_pid = false;
     __enable_irq();
+
+    if (reiniciar) {
+        calculo_pid_reiniciar();      /* cada arranque empieza sin estado previo */
+    }
 
     if (periodos == 0u) {
         return;  /* Todavia no pasan 10 ms */
@@ -73,7 +87,8 @@ void control_velocidad_ejecutar(void)
      * Si el experimento esta apagado (o no corre), no hace nada. */
     experimento_pwm_muestrear(cuenta, periodos);
 
-    /* 3. Actuar: solo RUN mueve el motor; IDLE y FAULT lo mantienen apagado. */
+    /* 3. Actuar: solo RUN mueve el motor (y solo en RUN se llama al PID);
+     *    IDLE y FAULT lo mantienen apagado. */
     if (maquina_estados_permite_motor()) {
         (void)generador_pwm_fijar(calcular_mando());
     } else {
@@ -106,13 +121,18 @@ bool control_velocidad_fijar_referencia(float rpm)
 
 bool control_velocidad_arrancar(void)
 {
-    return maquina_estados_arrancar();
+    bool arranco = maquina_estados_arrancar();
+    if (arranco) {
+        reiniciar_pid = true;   /* el reinicio se hace en control_velocidad_ejecutar */
+    }
+    return arranco;
 }
 
 bool control_velocidad_detener(void)
 {
     bool estaba_en_run = maquina_estados_detener();
     generador_pwm_detener();
+    reiniciar_pid = true;       /* el reinicio se hace en control_velocidad_ejecutar */
     return estaba_en_run;
 }
 

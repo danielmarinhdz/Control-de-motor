@@ -50,9 +50,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Application/calculo_rpm.c
     Application/control_velocidad.c
     Core/Src/maquina_estados.c
+    Core/Src/calculo_pid.c
     Core/Src/pantalla_oled.c
     Application/telemetria_serial.c
     Application/experimento_pwm.c
+    Application/comando_serial.c
 )
 
 # Add include paths

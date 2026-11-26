@@ -30,27 +30,28 @@ extern UART_HandleTypeDef huart2;
 #error "EXPERIMENTO_INTEGRANTE debe ser INTEGRANTE_DANIEL, INTEGRANTE_MATEO o INTEGRANTE_ANGEL"
 #endif
 
-#define TS_MS            10u    /* periodo de TIM2 / control_velocidad            */
-#define MAX_MUESTRAS     4500u  /* 4500 x 3 bytes = 13.5 KB de RAM                */
+#define TS_MS            4u    /* periodo de TIM2 / control_velocidad            */
 #define TIMEOUT_TX_MS    20u
 
 #define MODO_ESCALON     1u
 #define MODO_PRBS9       2u
 
-/* Duraciones en ciclos de 10 ms. */
-#define ESC_CERO         100u   /* 1.0 s en 0 %                                   */
-#define ESC_ALTO         400u   /* 4.0 s en ALTO                                  */
+/* Duraciones en ciclos de 4 ms. */
+#define ESC_CERO         250u   /* 1.0 s en 0 %                                   */
+#define ESC_ALTO         1000u   /* 4.0 s en ALTO                                  */
 #define ESC_TOTAL        (ESC_CERO + ESC_ALTO)
 #define ESC_INICIO       ESC_CERO                         /* salto 0 -> ALTO      */
 
-#define PRBS_CALENTAR    150u   /* 1.5 s en BAJO antes de la secuencia            */
+#define PRBS_CALENTAR    375u   /* 1.5 s en BAJO antes de la secuencia            */
 #define PRBS_BITS        511u   /* PRBS9: 2^9 - 1                                 */
-#define PRBS_TOTAL       (PRBS_CALENTAR + PRBS_BITS * EXPERIMENTO_PRBS_BIT_MUESTRAS)
+#define PRBS_REPETICIONES 3u    /* 3N: 1a se descarta, 2a identifica, 3a valida   */
+#define PRBS_TOTAL       (PRBS_CALENTAR + PRBS_REPETICIONES * PRBS_BITS * EXPERIMENTO_PRBS_BIT_MUESTRAS)
 #define PRBS_INICIO      PRBS_CALENTAR                    /* primer bit           */
 
-_Static_assert(PRBS_TOTAL <= MAX_MUESTRAS,
-               "La PRBS9 no cabe en la memoria: baja EXPERIMENTO_PRBS_BIT_MUESTRAS (maximo 8)");
-_Static_assert(ESC_TOTAL <= MAX_MUESTRAS, "El escalon no cabe en la memoria");
+/* Memoria para la prueba mas larga (3 bytes por muestra). Se calcula sola. */
+#define MAX_MUESTRAS     ((PRBS_TOTAL > ESC_TOTAL) ? PRBS_TOTAL : ESC_TOTAL)
+_Static_assert(MAX_MUESTRAS <= 30000u,
+               "La prueba no cabe en la RAM (max. ~90 KB): baja EXPERIMENTO_PRBS_BIT_MUESTRAS");
 
 typedef enum { ESPERANDO, CORRIENDO, VOLCANDO } fase_t;
 

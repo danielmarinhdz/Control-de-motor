@@ -19,12 +19,23 @@
 #define CALCULO_RPM_CUENTAS_POR_VUELTA  685.0f
 #define CALCULO_RPM_SIGNO               -1.0f   /* poner 1.0f si sale al reves */
 
-/* Guarda la cuenta inicial como referencia. Recibe: cuenta actual del encoder.
+/* FILTRO: pasa-bajas de primer orden (EMA) sobre las RPM.
+ * Por que: con 685 cuentas/vuelta y 10 ms, 1 cuenta = ~8.8 RPM, asi que la
+ *    lectura cruda brinca de 8.8 en 8.8 RPM y mete ruido al PI.
+ * TAU_FILTRO_S = constante de tiempo del filtro [s]. Debe ser bastante menor
+ *    que la del motor (tau medida ~20-37 ms) para no meterle retraso al lazo.
+ *    Con 10 ms y dt = 10 ms: alfa = 0.5. Mas grande = mas suave pero mas lento.
+ *    0.0f = sin filtro (alfa = 1). */
+#define CALCULO_RPM_TAU_FILTRO_S        0.010f
+
+/* Guarda la cuenta inicial como referencia y pone el filtro en 0 RPM.
+ * Recibe: cuenta actual del encoder.
  * Cuando: una vez, al arrancar (control_velocidad_iniciar). */
 void calculo_rpm_iniciar(uint16_t cuenta);
 
 /* Recibe: cuenta actual y dt_s [s] desde la llamada anterior (> 0).
- * Devuelve: RPM con signo del eje de salida. Si dt_s <= 0 devuelve 0.
+ * Devuelve: RPM FILTRADAS con signo del eje de salida (ver TAU_FILTRO_S).
+ *    Si dt_s <= 0 devuelve el ultimo valor filtrado sin cambiarlo.
  * Maneja el desbordamiento del contador de 16 bits y el sentido de giro. */
 float calculo_rpm_actualizar(uint16_t cuenta, float dt_s);
 
