@@ -32,7 +32,7 @@
  * entre el PID, poner EXPERIMENTO_PWM_HABILITADO en 0 y el modulo queda vacio.
  */
 
-#define EXPERIMENTO_PWM_HABILITADO  1
+#define EXPERIMENTO_PWM_HABILITADO  0
 
 /* ---------------------------------------------------------------------------
  * QUIEN CORRE EL EXPERIMENTO: cambia SOLO esta linea, compila y flashea.
@@ -50,11 +50,11 @@
 #define INTEGRANTE_MATEO   2
 #define INTEGRANTE_ANGEL   3
 
-#define EXPERIMENTO_INTEGRANTE      INTEGRANTE_DANIEL
+#define EXPERIMENTO_INTEGRANTE      INTEGRANTE_MATEO
 
 /* Duracion de cada bit de la PRBS9, en ciclos de 10 ms. Con 6 son 60 ms, unas
  * 2 constantes de tiempo del motor (~25-30 ms), y la secuencia dura 30.7 s. */
-#define EXPERIMENTO_PRBS_BIT_MUESTRAS  6
+#define EXPERIMENTO_PRBS_BIT_MUESTRAS  3
 
 /* Deja el modulo en espera y la referencia en 0.
  * Cuando: una vez en main.c, DESPUES de control_velocidad_iniciar(). */

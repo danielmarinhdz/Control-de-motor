@@ -25,6 +25,7 @@
 #include "pantalla_oled.h"
 #include "telemetria_serial.h"
 #include "experimento_pwm.h"
+#include "comando_serial.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -119,8 +120,9 @@ int main(void)
   /* Orden que pide control_velocidad.h: timers arrancados, luego la pantalla, luego el control. */
   pantalla_oled_inicializar(&hi2c1);   /* hi2c1: lo genera CubeMX al activar I2C1 */
   control_velocidad_iniciar();         /* deja el motor parado en IDLE */
-  control_velocidad_fijar_referencia(220.0f); /* prueba lazo abierto: 100 RPM */
+  control_velocidad_fijar_referencia(200.0f); /* referencia de prueba del PI: 200 RPM */
   experimento_pwm_iniciar();           /* experimentos de identificacion: referencia en 0, espera el boton */
+  comando_serial_iniciar();            /* escucha la referencia por la terminal serie */
   /* USER CODE END 2 */
 
   /* Initialize leds */
@@ -138,6 +140,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     control_velocidad_ejecutar();  /* medir -> calcular -> actuar (cada 10 ms) */
+    comando_serial_actualizar();   /* nueva referencia escrita en la terminal (ej. 150 + Enter) */
     experimento_pwm_actualizar();    /* escalon / PRBS9: manda los datos por serial al terminar cada prueba */
     if (!experimento_pwm_activo()) {
       telemetria_serial_actualizar();  /* RPM por puerto serie cada 100 ms */

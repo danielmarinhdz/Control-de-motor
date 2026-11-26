@@ -35,7 +35,7 @@ GRIS = "#52514e"       # datos medidos
 AZUL = "#2a78d6"       # modelo 1 (escalon)
 NARANJA = "#eb6834"    # modelo 2 (PRBS9)
 INTEGRANTES = {1: "Daniel", 2: "Mateo", 3: "Angel"}
-VENTANA_PRBS_S = 6.0   # segundos de la PRBS9 que se dibujan (se ve mejor que los 30 s)
+VENTANA_PRBS_S = 2.0   # segundos de la PRBS9 que se dibujan (con bits de 12 ms, 2 s ya se ve bien)
 
 
 # =========================================================================== 1. leer el log
@@ -127,19 +127,25 @@ def modelo_prbs(prueba):
     t_ini = prueba["meta"]["ini"] * ts
     dentro = (t - ts) >= t_ini - 1e-9                       # solo la secuencia (sin el calentamiento)
     t, u, y = t[dentro] - t_ini, u[dentro], y[dentro]
-    u0, y0 = u.mean(), y.mean()                             # punto de operacion
-    du, dy = u - u0, y - y0
+    N = 511 * prueba["meta"]["bitm"]                        # muestras de una PRBS9
+    if len(y) >= 3 * N - 1:                                   # 3N: 1a se descarta, 2a identifica, 3a valida
+        ui, yi = u[N:2 * N], y[N:2 * N]
+        tv, uv, yv = t[2 * N:3 * N] - t[2 * N], u[2 * N:3 * N], y[2 * N:3 * N]
+    else:                                                   # logs viejos con una sola PRBS9
+        ui, yi, tv, uv, yv = u, y, t, u, y
 
-    Phi = np.column_stack([dy[:-1], du[1:]])                # renglones: [y(k-1)  u(k-1)]
+    u0, y0 = ui.mean(), yi.mean()                           # punto de operacion
+    du, dy = ui - u0, yi - y0
+    M = np.column_stack([dy[:-1], du[1:]])                  # renglones: [y(k-1)  u(k)]
     Y = dy[1:]                                              #            y(k)
-    a, b = np.linalg.solve(Phi.T @ Phi, Phi.T @ Y)          # theta = (Phi^T Phi)^-1 Phi^T Y
+    a, b = np.linalg.solve(M.T @ M, M.T @ Y)                # P = (M^T M)^-1 M^T Y
     a, b = float(a), float(b)
     K = b / (1.0 - a)
     tau = -ts / np.log(a) if 0.0 < a < 1.0 else float("nan")
-    yh = simular(a, b, u, y, u0, y0)
+    yh = simular(a, b, uv, yv, u0, y0)                      # el modelo se prueba con la 3a repeticion
     return {"K": float(K), "tau": float(tau), "a": a, "b": b, "ts": ts,
             "u0": float(u0), "y0": float(y0), "N": int(len(Y)),
-            "t": t, "u": u, "y": y, "yh": yh, "fit": fit(y, yh)}
+            "t": tv, "u": uv, "y": yv, "yh": yh, "fit": fit(yv, yh)}
 
 
 def tau_subida_bajada(t, u, y, minimo=18):
@@ -228,13 +234,13 @@ def main():
     os.makedirs(carpeta, exist_ok=True)
 
     me, mp = modelo_escalon(pe), modelo_prbs(pp)
-    sube, baja = tau_subida_bajada(mp["t"], mp["u"], mp["y"])
+    sube, baja = tau_subida_bajada(*senales(pp)[:3])
 
     grafica_datos_vs_modelo(me, AZUL, "Modelo 1: respuesta al paso",
                             f"Respuesta al escalón: datos vs modelo - {nombre}",
                             os.path.join(carpeta, "1_escalon_datos_vs_modelo.png"))
     grafica_datos_vs_modelo(mp, NARANJA, "Modelo 2: mínimos cuadrados (PRBS9)",
-                            f"Respuesta a la PRBS9: datos vs modelo (primeros {VENTANA_PRBS_S:.0f} s) - {nombre}",
+                            f"PRBS9, datos de validación (3a repetición) vs modelo (primeros {VENTANA_PRBS_S:.0f} s) - {nombre}",
                             os.path.join(carpeta, "2_prbs9_datos_vs_modelo.png"), xlim=(0, VENTANA_PRBS_S))
     grafica_error(me, AZUL, f"Error del modelo 1 (escalón) - {nombre}",
                   os.path.join(carpeta, "3_error_escalon.png"))
@@ -265,11 +271,11 @@ def main():
         f"  G1(z) = {E['b']:.4f} / (z - {E['a']:.4f})",
         f"  fit = {E['fit']:.2f} %     RMSE = {E['rmse']:.2f} RPM", "",
         f"MODELO 2 - Minimos cuadrados con PRBS9 (PWM {r['bajo']} % <-> {r['alto']} %)",
-        f"  N = {P['N']} ecuaciones  ->  a = {P['a']:.4f},  b = {P['b']:.4f}",
-        f"  G2(z) = {P['b']:.4f} / (z - {P['a']:.4f})",
-        f"  K = b/(1-a) = {P['K']:.4f} RPM/%     tau = -Ts/ln(a) = {P['tau'] * 1000:.1f} ms",
+        f"  N = {P['N']} ecuaciones  ->  a1 = {P['a']:.4f},  b0 = {P['b']:.4f}",
+        f"  G2(z) = {P['b']:.4f} / (1 - {P['a']:.4f} z^-1)",
+        f"  K = b0/(1-a1) = {P['K']:.4f} RPM/%     tau = -Ts/ln(a1) = {P['tau'] * 1000:.1f} ms",
         f"  G2(s) = {P['K']:.4f} / ({P['tau']:.5f} s + 1)",
-        f"  fit = {P['fit']:.2f} %     RMSE = {P['rmse']:.2f} RPM", "",
+        f"  fit (validacion, 3a repeticion) = {P['fit']:.2f} %     RMSE = {P['rmse']:.2f} RPM", "",
         "TAU AL SUBIR Y AL BAJAR EL PWM (bits largos de la PRBS9)",
         (f"  sube: {r['tau_sube'] * 1000:.1f} ms     baja: {r['tau_baja'] * 1000:.1f} ms"
          if r["tau_sube"] and r["tau_baja"] else "  (no hubo suficientes bits largos)"),
